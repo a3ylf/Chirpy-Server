@@ -6,21 +6,36 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"github.com/a3ylf/web-servers/database" 
+
 )
 type apiconfig struct{
     fileserverhits int
+    db *database.DB
 }
 
 
 
 func main() {
-    var apicfg apiconfig
+    
+    db, err := database.NewDB("database/database.json")
+
+    if err != nil {
+        log.Println(err)
+    }
+    apicfg := apiconfig{
+        fileserverhits: 0,
+        db: db,
+    }
+
     mux := http.NewServeMux()
     mux.Handle("/app/*",apicfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
     mux.HandleFunc("GET /api/healthz",handlerReadiness)
     mux.HandleFunc("/api/reset",apicfg.handlerReset)
-    mux.HandleFunc("/api/validate_chirp",handleValidation)
     mux.HandleFunc("GET /admin/metrics",apicfg.handlerMetrics)
+    mux.HandleFunc("POST /api/chirps",apicfg.handlePost)
+    mux.HandleFunc("GET /api/chirps",apicfg.handleGet)
+    
     server := &http.Server{
 		Addr:    ":8080",  	
 		Handler: mux,      
@@ -42,33 +57,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 
-func (cfg *apiconfig) handlerReset(w http.ResponseWriter, r*http.Request){
-    cfg.fileserverhits = 0
-    w.WriteHeader(http.StatusOK)
-    w.Write([]byte("Hits is now 0"))
-}
 
-func respondWithJSON(w http.ResponseWriter, code int, toSend interface{}) {
-    w.Header().Set("Content-Type", "application/json")
-    dat, err := json.Marshal(toSend)
-    if err != nil {
-        log.Printf("Error Marshaling: %s", err)
-        w.WriteHeader(500)
-        return
-    }
-    w.WriteHeader(code)
-    w.Write(dat)
-}
-func respondWithError(w http.ResponseWriter,code int, msg string) {
-    if code > 499 {
-        log.Printf("Responding with error 5XX : %s",msg)
-    }
-    type errorResponse struct {
-        Error string `json:"error`
-    }
-
-    respondWithJSON(w,code,errorResponse{Error: msg})
-}
 func handleValidation(w http.ResponseWriter, r *http.Request) {
     type parameters struct {
         Body string `json:"body"`
