@@ -51,6 +51,16 @@ func (db *DB) CreateChirp(body string,) (Chirp, error) {
     }
     return chirp, nil
 }
+func (db *DB) GetChirp(id int) (Chirp,error) {
+    dbs,err := db.loadDB()
+    if err != nil {
+        return Chirp{},err
+    }
+    if dbs.Chirps[id].Id == 0 {
+        return Chirp{}, errors.New("Unchirporpable")
+    }
+    return dbs.Chirps[id], nil
+}
 
 func (db *DB) GetChirps() ([]Chirp, error) {
     dbs, err := db.loadDB()
