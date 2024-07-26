@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -59,6 +61,7 @@ func (cfg *apiconfig) handlePost(w http.ResponseWriter, r *http.Request) {
 func (cfg *apiconfig) handleUserPost(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email string `json:"email"`
+		Password string `json:"password"`
 	}
 	params := parameters{}
 
@@ -67,9 +70,12 @@ func (cfg *apiconfig) handleUserPost(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
 		return
 	}
-
-
-	user, err := cfg.db.CreateUser(params.Email)
+    psw, err := 	bcrypt.GenerateFromPassword([]byte(params.Password),10)
+    
+    if err!= nil {
+        respondWithError(w,http.StatusInternalServerError,"Couldn't hash it")
+    }
+	user, err := cfg.db.CreateUser(params.Email,string(psw))
 	if err != nil {
 		log.Printf("Couldn't define user %s", err)
 		respondWithError(w, http.StatusInternalServerError, "Couldn't define user")
@@ -77,6 +83,35 @@ func (cfg *apiconfig) handleUserPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, 201, User{
+		Id:   user.Id,
+		Email: user.Email,
+	})
+}
+func (cfg *apiconfig) handleUserLogin(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Email string `json:"email"`
+		Password string `json:"password"`
+	}
+	params := parameters{}
+
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
+		return
+	}
+    
+	user, err := cfg.db.GetUserByEmail(params.Email)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't Find this user")
+		return
+	}
+    err = bcrypt.CompareHashAndPassword([]byte(user.Password),[]byte(params.Password))
+    if err != nil {
+        respondWithError(w,401,"Password incorrect!")
+        return
+    }
+
+	respondWithJSON(w, 200, User{
 		Id:   user.Id,
 		Email: user.Email,
 	})
