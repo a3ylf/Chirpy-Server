@@ -8,6 +8,10 @@ import (
 	"strconv"
 )
 
+type User struct {
+    Id int `json:"id"`
+    Email string `json:"email"`
+}
 type Chirp struct {
 	Id   int    `json:"id"`
 	Body string `json:"body"`
@@ -50,6 +54,31 @@ func (cfg *apiconfig) handlePost(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, 201, Chirp{
 		Id:   chirp.Id,
 		Body: chirp.Body,
+	})
+}
+func (cfg *apiconfig) handleUserPost(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Email string `json:"email"`
+	}
+	params := parameters{}
+
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
+		return
+	}
+
+
+	user, err := cfg.db.CreateUser(params.Email)
+	if err != nil {
+		log.Printf("Couldn't define user %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Couldn't define user")
+		return
+	}
+
+	respondWithJSON(w, 201, User{
+		Id:   user.Id,
+		Email: user.Email,
 	})
 }
 

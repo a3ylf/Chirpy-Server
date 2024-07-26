@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
-	"github.com/a3ylf/web-servers/database" 
 
+	"github.com/a3ylf/web-servers/database"
 )
 type apiconfig struct{
     fileserverhits int
@@ -18,6 +20,12 @@ type apiconfig struct{
 
 func main() {
     
+    dbg := flag.Bool("debug",false,"enable debug mode")
+    flag.Parse()
+    
+    if *dbg {
+        os.Remove("database/database.json")
+    }
     db, err := database.NewDB("database/database.json")
 
     if err != nil {
@@ -36,6 +44,7 @@ func main() {
     mux.HandleFunc("POST /api/chirps",apicfg.handlePost)
     mux.HandleFunc("GET /api/chirps",apicfg.handleGet)
     mux.HandleFunc("GET /api/chirps/{ID}",apicfg.handleGetChirp)
+    mux.HandleFunc("POST /api/users",apicfg.handleUserPost)
     
     server := &http.Server{
 		Addr:    ":8080",  	

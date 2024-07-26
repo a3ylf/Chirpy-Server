@@ -15,8 +15,13 @@ type DB struct {
 
 type DBstructure struct {
     Chirps map[int]Chirp `json:"chirps"`
+    Users map[int]User `json:"users"`
 }
 
+type User struct {
+    Id int `json:"id"`
+    Email string `json:"email"`
+}
 type Chirp struct {
     Id int `json:"id"`
     Body string `json:"body"`
@@ -74,9 +79,41 @@ func (db *DB) GetChirps() ([]Chirp, error) {
     return chirps, nil
 
 }
+
+func (db *DB) CreateUser(email string,) (User, error) {
+    DBS, err :=  db.loadDB()
+    if err != nil {
+        return User{},err
+    }
+    user := User{
+        Id: len(DBS.Users)+1,
+        Email: email,
+    }
+    DBS.Users[len(DBS.Users)+1] = user
+    err = db.writeDB(DBS)
+    if err != nil {
+        return User{},err
+    }
+    return user, nil
+}
+
+func (db *DB) GetUser(id int) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	user, ok := dbStructure.Users[id]
+	if !ok {
+		return User{}, errors.New("Not exist")
+	}
+
+	return user, nil
+}
 func(db *DB) createDB() error {
     DBstructure:= DBstructure{
         Chirps: map[int]Chirp{},
+        Users: map[int]User{},
     }
     return db.writeDB(DBstructure)
 }
