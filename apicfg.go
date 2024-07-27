@@ -62,6 +62,7 @@ func (cfg *apiconfig) handleUserPost(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email string `json:"email"`
 		Password string `json:"password"`
+		Expires int `json:"expires_in_seconds"`
 	}
 	params := parameters{}
 
