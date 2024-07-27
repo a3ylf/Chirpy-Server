@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 )
 
 
-func (cfg *apiconfig)handlerMetrics(w http.ResponseWriter, r *http.Request) {
+func (cfg *Apiconfig)HandlerMetrics(w http.ResponseWriter, r *http.Request) {
     w.Header().Add("Content-Type", "text/plain; charset=utf-8")
     w.WriteHeader(200)
     w.Write([]byte(fmt.Sprintf(`

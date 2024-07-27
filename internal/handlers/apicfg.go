@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"encoding/json"
@@ -11,9 +11,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/a3ylf/web-servers/internal/database"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
+type Apiconfig struct{
+    fileserverhits int
+    db *database.DB
+    secret string
+}
 
 type User struct {
     Id int `json:"id"`
@@ -23,14 +29,39 @@ type Chirp struct {
 	Id   int    `json:"id"`
 	Body string `json:"body"`
 }
-
-func (cfg *apiconfig) handlerReset(w http.ResponseWriter, r *http.Request) {
+func (cfg *Apiconfig) MiddlewareMetricsInc(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        cfg.fileserverhits++
+        next.ServeHTTP(w,r)
+    })
+}
+func (cfg *Apiconfig) HandlerReset(w http.ResponseWriter, r *http.Request) {
 	cfg.fileserverhits = 0
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Hits is now 0"))
 }
+func cleaner(pog string, bad []string) string {
+    splitted := strings.Split(pog," ")
+    for _, badword := range bad {
+        for k, split := range splitted {
+            if strings.ToLower(split) == badword {
+                splitted[k] = "****"
+            }
+        }
+    }
+    toSend := "" 
+    for _, split := range splitted {
+        if len(toSend) == 0 {
+            toSend = fmt.Sprintf(split)
+            continue
+        }
+        toSend = fmt.Sprintf(toSend+ " " + split )
+    }
+    return toSend
+    
+}
 
-func (cfg *apiconfig) handlePost(w http.ResponseWriter, r *http.Request) {
+func (cfg *Apiconfig) HandlePost(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Body string `json:"body"`
 	}
@@ -63,7 +94,7 @@ func (cfg *apiconfig) handlePost(w http.ResponseWriter, r *http.Request) {
 		Body: chirp.Body,
 	})
 }
-func (cfg *apiconfig) handleUserPost(w http.ResponseWriter, r *http.Request) {
+func (cfg *Apiconfig) HandleUserPost(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email string `json:"email"`
 		Password string `json:"password"`
@@ -93,7 +124,7 @@ func (cfg *apiconfig) handleUserPost(w http.ResponseWriter, r *http.Request) {
 		Email: user.Email,
 	})
 }
-func (cfg *apiconfig) handleUserLogin(w http.ResponseWriter, r *http.Request) {
+func (cfg *Apiconfig) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email string `json:"email"`
 		Password string `json:"password"`
@@ -177,7 +208,7 @@ func ValidateJWT(tokenString, tokenSecret string) (string, error) {
 
 	return userIDString, nil
 }
-func (cfg *apiconfig) handleUserPut(w http.ResponseWriter, r *http.Request) {
+func (cfg *Apiconfig) HandleUserPut(w http.ResponseWriter, r *http.Request) {
     tkn := r.Header.Get("Authorization")
     if  tkn == "" {
         respondWithError(w,http.StatusUnauthorized,"Couldn't find token")
@@ -233,7 +264,7 @@ func (cfg *apiconfig) handleUserPut(w http.ResponseWriter, r *http.Request) {
 }
 
 
-func (cfg *apiconfig) handleGet(w http.ResponseWriter, r *http.Request) {
+func (cfg *Apiconfig) HandleGet(w http.ResponseWriter, r *http.Request) {
 
 	dbChirps, err := cfg.db.GetChirps()
 	if err != nil {
@@ -252,10 +283,10 @@ func (cfg *apiconfig) handleGet(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(chirps, func(i, j int) bool {
 		return chirps[i].Id < chirps[j].Id
 	})
-
+ 
 	respondWithJSON(w, http.StatusOK, chirps)
 }
-func (cfg *apiconfig) handleGetChirp(w http.ResponseWriter, r *http.Request) {
+func (cfg *Apiconfig) HandleGetChirp(w http.ResponseWriter, r *http.Request) {
     id, err := strconv.Atoi(r.PathValue("ID"))
     if err != nil {
         respondWithError(w,http.StatusBadRequest,"Invalid chirp id")
