@@ -46,10 +46,10 @@ func main() {
 
     mux.HandleFunc("GET /api/healthz",handlers.HandlerReadiness)
     mux.HandleFunc("GET /admin/metrics",apicfg.HandlerMetrics)
-    mux.HandleFunc("GET /api/chirps",apicfg.HandleGet)
+    mux.HandleFunc("GET /api/chirps",apicfg.HandleGetChirps)
     mux.HandleFunc("GET /api/chirps/{ID}",apicfg.HandleGetChirp)
 
-    mux.HandleFunc("POST /api/chirps",apicfg.HandlePost)
+    mux.HandleFunc("POST /api/chirps",apicfg.HandlePostChirp)
     mux.HandleFunc("POST /api/users",apicfg.HandleUserPost)
     mux.HandleFunc("POST /api/login",apicfg.HandleUserLogin)
     
