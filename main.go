@@ -10,10 +10,12 @@ import (
 	"strings"
 
 	"github.com/a3ylf/web-servers/database"
+	"github.com/joho/godotenv"
 )
 type apiconfig struct{
     fileserverhits int
     db *database.DB
+    secret string
 }
 
 
@@ -31,10 +33,23 @@ func main() {
     if err != nil {
         log.Println(err)
     }
+
+     
+    err = godotenv.Load()
+    if err != nil {
+        log.Println(err)
+        return
+    }
+
+    jwtSecret := os.Getenv("JWT_SECRET")
+
+
     apicfg := apiconfig{
         fileserverhits: 0,
         db: db,
+        secret: jwtSecret,
     }
+
 
     mux := http.NewServeMux()
     mux.Handle("/app/*",apicfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
@@ -46,6 +61,7 @@ func main() {
     mux.HandleFunc("GET /api/chirps/{ID}",apicfg.handleGetChirp)
     mux.HandleFunc("POST /api/users",apicfg.handleUserPost)
     mux.HandleFunc("POST /api/login",apicfg.handleUserLogin)
+    mux.HandleFunc("PUT /api/users",apicfg.handleUserPut)
     
     server := &http.Server{
 		Addr:    ":8080",  	

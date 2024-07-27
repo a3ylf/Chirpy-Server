@@ -22,6 +22,7 @@ type User struct {
     Id int `json:"id"`
     Email string `json:"email"`
     Password string `json:"password"`
+    Token string `json:"token"`
 }
 type Chirp struct {
     Id int `json:"id"`
@@ -114,6 +115,28 @@ func (db *DB) GetUser(id int) (User, error) {
 	user, ok := dbStructure.Users[id]
 	if !ok {
 		return User{}, errors.New("Not exist")
+	}
+
+	return user, nil
+}
+func (db *DB) UpdateUser(id int, email, hashedPassword string) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	user, ok := dbStructure.Users[id]
+	if !ok {
+		return User{}, errors.New("user do not exist")	
+	}
+
+	user.Email = email
+	user.Password  = hashedPassword
+	dbStructure.Users[id] = user
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return User{}, err
 	}
 
 	return user, nil
