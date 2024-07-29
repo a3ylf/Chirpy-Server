@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -47,12 +49,12 @@ func (cfg *Apiconfig) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email string `json:"email"`
 		Password string `json:"password"`
-		Expires int `json:"expires_in_seconds"`
 	}
 
 	type response struct {
 	    User
 	    Token string `json:"token"`
+	    RefreshToken string `json:"refresh_token"`
     }
 	params := parameters{}
 
@@ -73,14 +75,11 @@ func (cfg *Apiconfig) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    plus := 60*60*24
-    if params.Expires != 0 {
-        plus = params.Expires 
-    }
+    
     claims := jwt.RegisteredClaims{
         Issuer: "chirpy",
         IssuedAt: jwt.NewNumericDate(time.Now().UTC()),
-        ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Duration(plus)*time.Second)),
+        ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Hour)),
         Subject: fmt.Sprintf("%d",user.Id),
     }
     token := jwt.NewWithClaims(jwt.SigningMethodHS256,claims)
@@ -90,6 +89,21 @@ func (cfg *Apiconfig) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         respondWithError(w,http.StatusInternalServerError,"Couldn't create JMT")
     }
+    
+    rndbyte := make([]byte,32)
+
+    _, err = rand.Read([]byte(cfg.secret))
+
+    if err != nil {
+        respondWithError(w,http.StatusInternalServerError,"Couldn't Make refresh token")
+    }
+
+    refreshtoken := hex.EncodeToString(rndbyte)
+
+    err = cfg.db.SaveRFtokens(user.Id, refreshtoken)
+    if err != nil {
+        respondWithError(w,http.StatusInternalServerError,"couldn't save rf token")
+    }
 
 
 	respondWithJSON(w, 200, response{
@@ -98,7 +112,8 @@ func (cfg *Apiconfig) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
 		Email: user.Email,
 	},
 	Token: assignedtoken,
-	    }) 
+	RefreshToken: refreshtoken,    
+	}) 
 
 }
 func (cfg *Apiconfig) HandleUserPut(w http.ResponseWriter, r *http.Request) {

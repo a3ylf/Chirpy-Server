@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 )
+var errnotexist error = errors.New("It does not exist brother") 
 
 type DB struct {
     path string
@@ -16,13 +17,13 @@ type DB struct {
 type DBstructure struct {
     Chirps map[int]Chirp `json:"chirps"`
     Users map[int]User `json:"users"`
+    Tokens map[string]RefreshToken `json:"refresh_tokens"`
 }
 
 type User struct {
     Id int `json:"id"`
     Email string `json:"email"`
     Password string `json:"password"`
-    Token string `json:"token"`
 }
 type Chirp struct {
     Id int `json:"id"`
