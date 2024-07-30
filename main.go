@@ -20,9 +20,9 @@ func main() {
     flag.Parse()
     
     if *dbg {
-        os.Remove("database/database.json")
+        os.Remove("internal/database/database.json")
     }
-    db, err := database.NewDB("database/database.json")
+    db, err := database.NewDB("internal/database/database.json")
 
     if err != nil {
         log.Println(err)
@@ -52,8 +52,8 @@ func main() {
     mux.HandleFunc("POST /api/chirps",apicfg.HandlePostChirp)
     mux.HandleFunc("POST /api/users",apicfg.HandleUserPost)
     mux.HandleFunc("POST /api/login",apicfg.HandleUserLogin)
-    mux.HandleFunc("POST /api/refresh",apicfg.HandleTokenRefresh)
-    mux.HandleFunc("POST /api/revoke",apicfg.HandleTokenRevoke)
+    mux.HandleFunc("POST /api/refresh",apicfg.HandlerRefresh)
+    mux.HandleFunc("POST /api/revoke",apicfg.HandlerRevoke)
     
     mux.HandleFunc("PUT /api/users",apicfg.HandleUserPut)
     

@@ -52,11 +52,11 @@ func (db *DB) UserForRefreshToken(token string) (User, error) {
     rt, ok := dbs.Tokens[token]
 
     if !ok {
-        return User{}, errnotexist
+        return User{}, ErrNotExist
     }
 
     if rt.ExpiresAt.Before(time.Now()) {
-        return User{}, errnotexist
+        return User{}, ErrNotExist
     }
 
     user, err := db.GetUser(rt.UserID)

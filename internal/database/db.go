@@ -7,7 +7,9 @@ import (
 	"os"
 	"sync"
 )
-var errnotexist error = errors.New("It does not exist brother") 
+var ErrAlreadyExists = errors.New("already exists")
+var ErrNotExist = errors.New("Do not exist")
+
 
 type DB struct {
     path string
@@ -83,28 +85,33 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 
 }
 
-func (db *DB) CreateUser(email string,password string) (User, error) {
-    DBS, err :=  db.loadDB()
-    if err != nil {
-        return User{},err
+
+func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
+	 _, err := db.GetUserByEmail(email) 
+
+	if err != ErrNotExist {
+	    return User{}, err
     }
-    for _, user := range DBS.Users{
-        if user.Email == email {
-            return User{},errors.New("Email already exists")
-        }
-    }
-    user := User{
-        Id: len(DBS.Users)+1,
-        Email: email,
-        Password: password,
-    }
-    DBS.Users[len(DBS.Users)+1] = user
-    err = db.writeDB(DBS)
-    if err != nil {
-        return User{},err
-    }
-    
-    return user, nil
+
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	id := len(dbStructure.Users) + 1
+	user := User{
+		Id:             id,
+		Email:          email,
+		Password: hashedPassword,
+	}
+	dbStructure.Users[id] = user
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, nil
 }
 
 func (db *DB) GetUser(id int) (User, error) {
@@ -153,12 +160,13 @@ func (db *DB) GetUserByEmail(email string) (User, error) {
         }
     }
 
-	return User{}, errors.New("Couldn't find user")
+	return User{}, ErrNotExist
 }
 func(db *DB) createDB() error {
     DBstructure:= DBstructure{
         Chirps: map[int]Chirp{},
         Users: map[int]User{},
+        Tokens: map[string]RefreshToken{},
     }
     return db.writeDB(DBstructure)
 }

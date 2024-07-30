@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/a3ylf/web-servers/internal/auth"
+	"github.com/a3ylf/web-servers/internal/database"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -31,12 +34,17 @@ func (cfg *Apiconfig) HandleUserPost(w http.ResponseWriter, r *http.Request) {
     
     if err!= nil {
         respondWithError(w,http.StatusInternalServerError,"Couldn't hash it")
+        return
     }
    
-	user, err := cfg.db.CreateUser(params.Email,string(psw))
+	user, err := cfg.db.CreateUser(params.Email,string(psw)) 
 	if err != nil {
-		log.Printf("Couldn't define user %s", err)
-		respondWithError(w, http.StatusInternalServerError, "Couldn't define user")
+		if errors.Is(err, database.ErrAlreadyExists) {
+			respondWithError(w, http.StatusConflict, "User already exists")
+			return
+		}
+        log.Printf(err.Error())
+		respondWithError(w, http.StatusInternalServerError, "Couldn't create user")
 		return
 	}
 
@@ -126,9 +134,9 @@ func (cfg *Apiconfig) HandleUserPut(w http.ResponseWriter, r *http.Request) {
 	if len(splitAuth) < 2 || splitAuth[0] != "Bearer" {
 		respondWithError(w,http.StatusUnauthorized,"malformed authorization header")
 	}
+    auth.GetTokenBearer(r.Header)
     
     subject , err := ValidateJWT(splitAuth[1],cfg.secret)
-
     if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Couldn't validate JWT")
 		return
