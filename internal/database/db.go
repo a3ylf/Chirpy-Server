@@ -110,6 +110,21 @@ func (db *DB) GetChirps() ([]Chirp, error) {
     return chirps, nil
 
 }
+func (db *DB) GetChirpsByAuthor(author int) ([]Chirp, error) {
+    dbs, err := db.loadDB()
+    if err != nil {
+        return []Chirp{}, err
+    }
+    chirps := make([]Chirp,0,len(dbs.Chirps))
+    for _, chirp := range dbs.Chirps{
+        if chirp.Author_id == author{
+       chirps = append(chirps, chirp) 
+        }
+    }
+    return chirps, nil
+}
+
+
 func (db *DB) DeleteChirp(id int ) error {
     dbs, err := db.loadDB()
     if err != nil {

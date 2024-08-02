@@ -93,7 +93,38 @@ func (cfg *Apiconfig) HandleGetChirps(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		respondWithError(w, http.StatusInternalServerError, "couln't chirp for you")
 	}
+	asc := true
+	ascordesc := r.URL.Query().Get("sort")
+
+	if ascordesc == "desc" {
+		asc = false
+	}
+
+	s := r.URL.Query().Get("author_id")
+	if s != "" {
+		author_id, err := strconv.Atoi(s)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Invalid author id")
+			return
+		}
+
+		chirps, err := cfg.db.GetChirpsByAuthor(author_id)
+
+		if err != nil {
+			respondWithError(w, http.StatusNotFound, "couldn't get chirps")
+			return
+		}
+		if !asc {
+			for i, j := 0, len(chirps)-1; i < j; i, j = i+1, j-1 {
+				chirps[i], chirps[j] = chirps[j], chirps[i]
+			}
+		}
+		respondWithJSON(w, http.StatusOK, chirps)
+		return
+	}
+
 	chirps := []database.Chirp{}
+
 	for _, dbChirp := range dbChirps {
 		chirps = append(chirps, database.Chirp{
 			Id:        dbChirp.Id,
@@ -105,7 +136,11 @@ func (cfg *Apiconfig) HandleGetChirps(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(chirps, func(i, j int) bool {
 		return chirps[i].Id < chirps[j].Id
 	})
-
+	if !asc {
+		for i, j := 0, len(chirps)-1; i < j; i, j = i+1, j-1 {
+			chirps[i], chirps[j] = chirps[j], chirps[i]
+		}
+	}
 	respondWithJSON(w, http.StatusOK, chirps)
 }
 func (cfg *Apiconfig) HandleGetChirp(w http.ResponseWriter, r *http.Request) {
