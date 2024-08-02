@@ -109,6 +109,18 @@ func (db *DB) GetChirps() ([]Chirp, error) {
     return chirps, nil
 
 }
+func (db *DB) DeleteChirp(id int ) error {
+    dbs, err := db.loadDB()
+    if err != nil {
+        return err
+    }
+    delete(dbs.Chirps,id)
+    err = db.writeDB(dbs)
+    if err != nil {
+        return err
+    }
+    return nil
+} 
 
 
 func (db *DB) CreateUser(email, hashedPassword string) (User, error) {

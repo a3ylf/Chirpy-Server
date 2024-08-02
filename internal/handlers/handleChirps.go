@@ -71,7 +71,7 @@ func (cfg *Apiconfig) HandlePostChirp(w http.ResponseWriter, r *http.Request) {
 
 	if author_id == 0 {
 		chirp, err = cfg.db.CreateChirp(cleaned, cfg.current)
-		cfg.db.CreateAuthor(subject,cfg.current)
+		cfg.db.CreateAuthor(subject, cfg.current)
 		cfg.current++
 	} else {
 		chirp, err = cfg.db.CreateChirp(cleaned, author_id)
@@ -96,8 +96,8 @@ func (cfg *Apiconfig) HandleGetChirps(w http.ResponseWriter, r *http.Request) {
 	chirps := []database.Chirp{}
 	for _, dbChirp := range dbChirps {
 		chirps = append(chirps, database.Chirp{
-			Id:   dbChirp.Id,
-			Body: dbChirp.Body,
+			Id:        dbChirp.Id,
+			Body:      dbChirp.Body,
 			Author_id: dbChirp.Author_id,
 		})
 	}
@@ -119,5 +119,44 @@ func (cfg *Apiconfig) HandleGetChirp(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusNotFound, "Unchirpopable")
 		return
 	}
-	respondWithJSON(w, http.StatusOK,chirp)
+	respondWithJSON(w, http.StatusOK, chirp)
+}
+func (cfg *Apiconfig) HandleDeleteChirp(w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetTokenBearer(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, err.Error())
+	}
+
+	subject, err := ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Couldn't validate JWT")
+		return
+	}
+
+	author_id, err := cfg.db.GetAuthor(subject)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't get author_id")
+		return
+	}
+
+	id, err := strconv.Atoi(r.PathValue("ID"))
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid chirp id")
+		return
+	}
+	chirp, err := cfg.db.GetChirp(id)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't get chirp")
+		return
+	}
+	if chirp.Author_id == author_id {
+		err = cfg.db.DeleteChirp(id)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Couldn't delete chirp")
+			return
+		}
+		respondWithJSON(w, 204, "Chirp deleted sucessfully")
+		return
+	}
+	respondWithError(w, 403, "Chirp could not be deleted")
 }
