@@ -7,5 +7,6 @@ func Newcfg (db *database.DB, secret string)  (Apiconfig){
         fileserverhits: 0,
         db: db,
         secret: secret,
+        current:1,
     }
 }

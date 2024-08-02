@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/a3ylf/web-servers/internal/auth"
@@ -125,18 +124,13 @@ func (cfg *Apiconfig) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
 
 }
 func (cfg *Apiconfig) HandleUserPut(w http.ResponseWriter, r *http.Request) {
-    tkn := r.Header.Get("Authorization")
-    if  tkn == "" {
-        respondWithError(w,http.StatusUnauthorized,"Couldn't find token")
-    }
-   
-    splitAuth := strings.Split(tkn, " ")
-	if len(splitAuth) < 2 || splitAuth[0] != "Bearer" {
-		respondWithError(w,http.StatusUnauthorized,"malformed authorization header")
-	}
-    auth.GetTokenBearer(r.Header)
     
-    subject , err := ValidateJWT(splitAuth[1],cfg.secret)
+    token, err := auth.GetTokenBearer(r.Header)
+    if err != nil {
+        respondWithError(w,http.StatusUnauthorized,err.Error())
+    }
+    
+    subject , err := ValidateJWT(token,cfg.secret)
     if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Couldn't validate JWT")
 		return

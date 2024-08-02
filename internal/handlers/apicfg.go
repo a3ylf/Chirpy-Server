@@ -9,6 +9,7 @@ type Apiconfig struct{
     fileserverhits int
     db *database.DB
     secret string
+    current int
 }
 
 type User struct {
@@ -18,6 +19,7 @@ type User struct {
 type Chirp struct {
 	Id   int    `json:"id"`
 	Body string `json:"body"`
+	Author_id int `json:"author_id"`
 }
 
 func ValidateJWT(tokenString, tokenSecret string) (string, error) {

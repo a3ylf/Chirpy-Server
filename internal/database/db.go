@@ -20,6 +20,7 @@ type DBstructure struct {
     Chirps map[int]Chirp `json:"chirps"`
     Users map[int]User `json:"users"`
     Tokens map[string]RefreshToken `json:"refresh_tokens"`
+    Authors map[string]int `json:"authors"`
 }
 
 type User struct {
@@ -29,6 +30,7 @@ type User struct {
 }
 type Chirp struct {
     Id int `json:"id"`
+    Author_id int `json:"author_id"`
     Body string `json:"body"`
 }
 
@@ -45,13 +47,36 @@ func NewDB(path string) (*DB, error) {
     
 }
 
-func (db *DB) CreateChirp(body string,) (Chirp, error) {
+func (db *DB) GetAuthor(token string) (int,error) {
+    dbs,err := db.loadDB()
+    if err != nil {
+        return 0, err
+
+    }
+    return dbs.Authors[token], nil
+}
+func (db *DB) CreateAuthor(token string,author int) (error) {
+    dbs,err := db.loadDB()
+    if err != nil {
+        return err
+
+    }
+    dbs.Authors[token] = author
+    err = db.writeDB(dbs)
+    if err != nil {
+        return err
+    }
+
+    return  nil
+}
+func (db *DB) CreateChirp(body string, current int) (Chirp, error) {
     DBS, err :=  db.loadDB()
     if err != nil {
         return Chirp{},err
     }
     chirp := Chirp{
         Id: len(DBS.Chirps)+1,
+        Author_id: current,
         Body: body,
     }
     DBS.Chirps[len(DBS.Chirps)+1] = chirp
@@ -167,6 +192,7 @@ func(db *DB) createDB() error {
         Chirps: map[int]Chirp{},
         Users: map[int]User{},
         Tokens: map[string]RefreshToken{},
+        Authors: map[string]int{},
     }
     return db.writeDB(DBstructure)
 }
