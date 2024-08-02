@@ -47,10 +47,7 @@ func (cfg *Apiconfig) HandleUserPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, 201, User{
-		Id:   user.Id,
-		Email: user.Email,
-	})
+	respondWithJSON(w, 201, user)
 }
 func (cfg *Apiconfig) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
@@ -59,7 +56,7 @@ func (cfg *Apiconfig) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type response struct {
-	    User
+	    database.User 	    
 	    Token string `json:"token"`
 	    RefreshToken string `json:"refresh_token"`
     }
@@ -114,10 +111,7 @@ func (cfg *Apiconfig) HandleUserLogin(w http.ResponseWriter, r *http.Request) {
 
 
 	respondWithJSON(w, 200, response{
-        User: User{
-		Id:   user.Id,
-		Email: user.Email,
-	},
+    User:  user,
 	Token: assignedtoken,
 	RefreshToken: refreshtoken,    
 	}) 
@@ -167,9 +161,7 @@ func (cfg *Apiconfig) HandleUserPut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondWithJSON(w, 200, User{
-		Id:   user.Id,
-		Email: user.Email,
-	})
+	respondWithJSON(w, 200, user)
+	
 }
 

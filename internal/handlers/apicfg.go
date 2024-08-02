@@ -10,6 +10,7 @@ type Apiconfig struct{
     db *database.DB
     secret string
     current int
+    key string
 }
 
 type User struct {

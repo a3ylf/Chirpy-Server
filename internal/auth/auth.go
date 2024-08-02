@@ -12,23 +12,34 @@ import (
 
 var ErrNoAuthHeaderIncluded = errors.New("no auth header included")
 
-func GetTokenBearer (h http.Header) (string, error) {
-    authHeader := h.Get("Authorization")
-    if authHeader == "" {
-        return "", ErrNoAuthHeaderIncluded
-    }
+func GetTokenBearer(h http.Header) (string, error) {
+	authHeader := h.Get("Authorization")
+	if authHeader == "" {
+		return "", ErrNoAuthHeaderIncluded
+	}
 
-    splitAuth := strings.Split(authHeader," ")
-    if len(splitAuth) < 2 || splitAuth[0] != "Bearer" {
-        return "", errors.New("wrongly formed header")
+	splitAuth := strings.Split(authHeader, " ")
+	if len(splitAuth) < 2 || splitAuth[0] != "Bearer" {
+		return "", errors.New("wrongly formed header")
 
-    }
+	}
 
-    return splitAuth[1],nil
+	return splitAuth[1], nil
 
-
-    
 }
+func GetAPIKey(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return "", ErrNoAuthHeaderIncluded
+	}
+	splitAuth := strings.Split(authHeader, " ")
+	if len(splitAuth) < 2 || splitAuth[0] != "ApiKey" {
+		return "", errors.New("malformed authorization header")
+	}
+
+	return splitAuth[1], nil
+}
+
 func MakeJWT(
 	userID int,
 	tokenSecret string,
@@ -41,6 +52,6 @@ func MakeJWT(
 		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
 		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
 		Subject:   fmt.Sprintf("%d", userID),
-})	
-    return token.SignedString(signingKey)
+	})
+	return token.SignedString(signingKey)
 }

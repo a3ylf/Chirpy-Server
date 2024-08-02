@@ -36,8 +36,9 @@ func main() {
     }
 
     jwtSecret := os.Getenv("JWT_SECRET")
-    
-    apicfg := handlers.Newcfg(db,jwtSecret) 
+    apikey := os.Getenv("POLKA_KEY")
+    apicfg := handlers.Newcfg(db,jwtSecret,apikey) 
+
 
 
     mux := http.NewServeMux()
@@ -55,7 +56,7 @@ func main() {
     mux.HandleFunc("POST /api/refresh",apicfg.HandlerRefresh)
     mux.HandleFunc("POST /api/revoke",apicfg.HandlerRevoke)
     
-    mux.HandleFunc("PUT /api/users",apicfg.HandleUserPut)
+    mux.HandleFunc("POST /api/polka/webhooks",apicfg.HandleRedChirpy)
 
     mux.HandleFunc("DELETE /api/chirps/{ID}",apicfg.HandleDeleteChirp)
     
